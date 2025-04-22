@@ -1,51 +1,65 @@
 <script setup>
-import { ref } from 'vue'
+import { useAnnunciStore } from '../stores/useAnnunciStore'
+import { storeToRefs } from 'pinia'
+import { ref, computed } from 'vue'
 
-const annunci = ref([
-  {
-    id: 1,
-    titolo: 'Annuncio 1',
-    descrizione: 'Descrizione 1',
-    categoria: 'Elettronica',
-    telefono: 3313314140,
-  },
-  {
-    id: 2,
-    titolo: 'Annuncio 2',
-    descrizione: 'Descrizione 2',
-    categoria: 'Immobili',
-    telefono: 3313314140,
-  },
-])
-
-const showModal = ref(false)
+const annunciStore = useAnnunciStore()
+const { annunci } = storeToRefs(annunciStore)
 
 const deleteAnnuncio = (id) => {
-  annunci.value = annunci.value.filter((annuncio) => annuncio.id !== id)
+  annunciStore.deleteAnnuncio(id)
 }
 
 const addAnnuncio = (newAnnuncio) => {
-  annunci.value.push(newAnnuncio)
+  annunciStore.addAnnuncio(newAnnuncio)
   showModal.value = false // Close the modal after adding
 }
+
+const showModal = ref(false)
 
 // Form fields
 const titolo = ref('')
 const descrizione = ref('')
 const categoria = ref('')
 const telefono = ref('')
+
+// Filtering
+const selectedCategoria = ref('') // Categoria selezionata per il filtro
+const filteredAnnunci = computed(() => {
+  if (!selectedCategoria.value) return annunci.value
+  return annunci.value.filter((annuncio) => annuncio.categoria === selectedCategoria.value)
+})
 </script>
 
 <template>
   <div class="container mx-auto p-4">
     <h1 class="text-2xl font-bold mb-4">Annunci</h1>
+
+    <!-- Filtro per categoria -->
+    <div class="mb-4">
+      <label for="categoria-filter" class="block text-sm font-medium text-gray-700"
+        >Filtra per Categoria</label
+      >
+      <select
+        id="categoria-filter"
+        v-model="selectedCategoria"
+        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+      >
+        <option value="">Tutte le categorie</option>
+        <option v-for="annuncio in annunci" :key="annuncio.categoria" :value="annuncio.categoria">
+          {{ annuncio.categoria }}
+        </option>
+      </select>
+    </div>
+
     <div class="mb-4">
       <button @click="showModal = true" class="bg-blue-500 text-white px-4 py-2 rounded">
         Aggiungi Annuncio
       </button>
     </div>
+
     <ul>
-      <li v-for="annuncio in annunci" :key="annuncio.id" class="border p-4 mb-2">
+      <li v-for="annuncio in filteredAnnunci" :key="annuncio.id" class="border p-4 mb-2">
         <h2 class="text-xl font-semibold">{{ annuncio.titolo }}</h2>
         <p>{{ annuncio.descrizione }}</p>
         <p class="text-gray-500">Categoria: {{ annuncio.categoria }}</p>
